@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>健康知识大闯关</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
+  <style>
+      .app-page {
+          background-image: linear-gradient(rgba(255,255,255,0.95), rgba(255,255,255,0.95)), url('welcome.jpeg');
+          background-size: cover;        /* 背景覆盖整个区域 */
+          background-position: center;   /* 居中显示 */
+          background-repeat: no-repeat;  /* 不平铺 */
+      }
+    .app-container { width: 375px; height: 812px; display: flex; flex-direction: column; overflow: hidden; background: #F5F7FA; }
+    .app-page { border: 1px solid #E1E5EA; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .gradient-bg { background: linear-gradient(135deg, #2D5BFF, #7B68EE); }
+    .option-card { transition: all 0.3s; border: 1px solid #E1E5EA; cursor: pointer; }
+    .option-card.correct { border: 2px solid #00C853; background-color: #E8F5E9; }
+    .option-card.wrong { border: 2px solid #FF5252; background-color: #FFEBEE; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="flex justify-center items-center min-h-screen bg-gray-100 p-4">
+  <div class="app-container">
+
+    <!-- 欢迎页 -->
+    <div class="app-page w-full h-full flex flex-col" id="welcomePage">
+      <div class="flex-1 flex flex-col justify-center items-center">
+        <h1 class="text-3xl font-bold text-transparent bg-clip-text gradient-bg mb-4">健康知识大闯关</h1>
+        <p class="text-gray-600 text-center px-8 leading-relaxed">
+          一起来挑战三关健康知识，看看你是不是健康生活达人！
+        </p>
+      </div>
+      <div class="p-6 flex justify-center">
+        <button onclick="startQuiz()" class="px-10 py-4 rounded-full gradient-bg text-white font-semibold text-lg shadow-md hover:scale-105 transition">
+          开始挑战
+        </button>
+      </div>
+      <div class="text-center pb-4 text-gray-400 text-sm">HealthQuiz © 2025</div>
+    </div>
+
+    <!-- 答题页 -->
+    <div class="app-page w-full h-full hidden flex-col" id="quizPage">
+      <div class="p-5 border-b">
+        <div class="flex justify-between items-center mb-2 text-gray-600 font-medium">
+          <span id="progressText">题目 1/5</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+          <div class="bg-indigo-500 h-2 rounded-full transition-all" id="progressBar" style="width:0%"></div>
+        </div>
+        <div class="flex justify-between items-center mt-2 text-sm text-gray-500">
+          <span id="levelDisplay" class="text-sm font-medium text-[#5A6270] bg-[#F0F5FF] px-3 py-1 rounded-full">第一关</span>
+          <span id="scoreDisplay" class="text-sm font-medium text-[#FF6B35] bg-[#FFF5F0] px-3 py-1 rounded-full">10分</span>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-5 hide-scrollbar">
+        <h2 id="questionText" class="text-lg font-semibold text-gray-800 mb-6">题目加载中...</h2>
+        <div id="optionsContainer" class="space-y-3"></div>
+        <div id="explanation" class="mt-6 p-4 bg-[#F8F9FA] rounded-lg border-l-4 border-[#2D5BFF]"></div>
+      </div>
+
+      <div class="p-5 flex justify-between">
+        <button onclick="prevQuestion()" id="prevBtn" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hidden">上一题</button>
+        <button onclick="nextQuestion()" id="nextBtn" class="px-6 py-2 gradient-bg text-white rounded-lg font-medium">下一题</button>
+      </div>
+    </div>
+
+    <!-- 结果页 -->
+    <div class="app-page w-full h-full hidden flex flex-col items-center justify-center text-center p-8" id="resultPage">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-2">闯关完成 🎉</h2>
+      <p class="text-gray-600 mb-6">你的健康知识得分为</p>
+      <div class="text-5xl font-bold text-orange-500 mb-4" id="finalScore">0</div>
+      <div class="mb-8">
+        <span class="iconify inline-block text-4xl mb-2" id="resultIcon"></span>
+        <h3 id="resultTitle" class="text-xl font-semibold mb-2">结果评估中...</h3>
+        <p id="resultDescription" class="text-gray-600 max-w-xs mx-auto leading-relaxed"></p>
+      </div>
+      <button onclick="restartQuiz()" class="px-8 py-3 rounded-full gradient-bg text-white font-semibold shadow-md hover:scale-105 transition">
+        再测一次
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const quizData = [
+      // 第一关（5题，每题10分）
+      { q: "成年人每天建议步数是多少？", opts: ["3000步", "6000步", "10000步", "15000步"], correct: 2, score: 10, exp: "建议每天步行10000步，有益心血管健康。", bg: "1.png" },
+      { q: "下列哪种饮品最不建议作为起床后第一杯水？", opts: ["温白开水", "淡蜂蜜水", "浓盐水", "柠檬水"], correct: 2, score: 10, exp: "浓盐水会升高血压并刺激胃黏膜，不推荐。", bg: "2.png" },
+      { q: "成年人每天建议睡眠时长是多少？", opts: ["5小时", "6小时", "7-9小时", "10小时"], correct: 2, score: 10, exp: "建议睡眠7-9小时，保证身心健康。", bg: "3.png" },
+      { q: "小面积烫伤的第一步处理方法是？", opts: ["涂牙膏", "挑破水泡", "用流动冷水冲洗", "敷冰块"], correct: 2, score: 10, exp: "用流动冷水冲洗10-30分钟最科学。", bg: "4.png" },
+      { q: "膳食宝塔中占比最大的是？", opts: ["鱼肉蛋类", "蔬菜水果", "谷薯类", "奶豆坚果类"], correct: 2, score: 10, exp: "谷薯类应作为主食来源，能量基础。", bg: "5.png" },
+
+      // 第二关（5题，每题15分）
+      { q: "用眼健康中哪项做法错误？", opts: ["遵循20-20-20法则", "频繁用网红眼药水", "光线充足姿势端正", "隐形眼镜不宜过夜"], correct: 1, score: 15, exp: "频繁使用眼药水可能伤眼，应遵医嘱使用。", bg: "6.png" },
+      { q: "哪种食物组合更均衡？", opts: ["白米饭+红烧肉", "杂粮饭+清蒸鱼+西兰花", "馒头+土豆丝", "面条+排骨汤"], correct: 1, score: 15, exp: "主食+蛋白+蔬菜的组合最均衡。", bg: "7.png" },
+      { q: "心理健康的正确观念是？", opts: ["强者不会有负面情绪", "情绪健康同样重要", "心理咨询是软弱", "情绪要忍着"], correct: 1, score: 15, exp: "情绪健康是整体健康的重要部分。", bg: "8.png" },
+      { q: "判断中等强度运动的简便方法？", opts: ["出汗不止", "能说话但不能唱歌", "心率越低越好", "越久越好"], correct: 1, score: 15, exp: "能说话不能唱歌代表运动强度适中。", bg: "9.png" },
+      { q: "抗生素使用的正确做法？", opts: ["感冒就吃", "医生指导下使用", "自行停药", "能杀病毒"], correct: 1, score: 15, exp: "抗生素需医生指导，仅对细菌感染有效。", bg: "10.png" },
+
+      // 第三关（5题，每题20分）
+      { q: "“隐形盐”常存在于哪类食物？", opts: ["水果", "蔬菜", "加工食品", "饮用水"], correct: 2, score: 20, exp: "面包、饼干等加工食品含隐形盐。", bg: "11.png" },
+      { q: "预防骨质疏松最关键的措施？", opts: ["只补钙片", "年轻时补钙+运动+维D", "老了再补钙", "多喝骨头汤"], correct: 1, score: 20, exp: "年轻时建立骨量最关键。", bg: "12.png" },
+      { q: "体检的正确认知是？", opts: ["没病不用查", "体检越贵越好", "定期体检并个性化项目", "一次正常可几年不查"], correct: 2, score: 20, exp: "应定期体检并个性化选择项目。", bg: "13.png" },
+      { q: "“食物相克”说法在科学上？", opts: ["有依据", "无依据", "部分正确", "完全可信"], correct: 1, score: 20, exp: "大多数‘相克’说法缺乏科学依据。", bg: "14.png" },
+      { q: "心跳骤停时最关键救援措施？", opts: ["掐人中", "呼喊摇晃", "CPR心肺复苏", "喂水"], correct: 2, score: 20, exp: "立即进行CPR是最关键的救命措施。", bg: "15.png" },
+    ];
+
+    const resultLevels = [
+      { min: 0, max: 59, title: "健康见习生", icon: "mdi:leaf-outline", desc: "健康意识刚起步，加油养成好习惯！" },
+      { min: 60, max: 119, title: "生活观察家", icon: "mdi:meditation", desc: "健康知识不错，再巩固细节更完美！" },
+      { min: 120, max: 200, title: "健康管理大师", icon: "mdi:crown", desc: "你是健康达人，请带动更多人健康生活！" }
+    ];
+
+    let current = 0;
+    let userAnswers = [];
+
+    function startQuiz() {
+      document.getElementById("welcomePage").classList.add("hidden");
+      document.getElementById("quizPage").classList.remove("hidden");
+      loadQuestion();
+    }
+
+    function getLevelInfo(index) {
+      if (index < 5) return { level: 1, max: 5 };
+      if (index < 10) return { level: 2, max: 5 };
+      return { level: 3, max: 5 };
+    }
+
+    function loadQuestion() {
+      const q = quizData[current];
+      const { level, max } = getLevelInfo(current);
+      const levelStartIndex = (level - 1) * 5;
+      const localIndex = current - levelStartIndex;
+
+      document.getElementById("progressText").textContent = `题目 ${localIndex + 1}/${max}`;
+      document.getElementById("levelDisplay").textContent = `第${level}关`;
+      document.getElementById("scoreDisplay").textContent = `${q.score}分`;
+      document.getElementById("progressBar").style.width = `${((localIndex + 1) / max) * 100}%`;
+
+      document.getElementById("questionText").textContent = q.q;
+      const container = document.getElementById("optionsContainer");
+      container.innerHTML = "";
+      document.getElementById("explanation").classList.add("hidden");
+
+      q.opts.forEach((opt, i) => {
+        const div = document.createElement("div");
+        div.className = "option-card p-4 rounded-lg";
+        div.innerHTML = `<div class='flex items-center'><span class='w-6 h-6 flex justify-center items-center mr-3 border rounded-full'>${String.fromCharCode(65+i)}</span>${opt}</div>`;
+        div.onclick = () => selectOption(i);
+        container.appendChild(div);
+      });
+
+      document.getElementById("prevBtn").classList.toggle("hidden", current === 0);
+      document.getElementById("nextBtn").textContent = current === quizData.length - 1 ? "查看结果" : "下一题";
+      
+      const appPage = document.getElementById('quizPage')
+      appPage.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url('${q.bg}')`;
+    }
+
+    function selectOption(i) {
+      if (userAnswers[current] !== undefined) return;
+      const q = quizData[current];
+      userAnswers[current] = i;
+      const opts = document.querySelectorAll(".option-card");
+      opts.forEach((card, idx) => {
+        if (idx === i) card.classList.add(i === q.correct ? "correct" : "wrong");
+        if (idx === q.correct && i !== q.correct) card.classList.add("correct");
+      });
+      const expBox = document.getElementById("explanation");
+      expBox.classList.remove("hidden");
+      expBox.innerHTML = `
+            <h3 class="text-[#2C3E50] font-medium mb-2">答案解析</h3>
+            <p class="text-[#5A6270]">${q.exp}</p>
+          `;
+    }
+
+    function nextQuestion() {
+      if (userAnswers[current] === undefined) { alert("请选择一个选项！"); return; }
+      if (current < quizData.length - 1) { current++; loadQuestion(); }
+      else showResult();
+    }
+
+    function prevQuestion() {
+      if (current > 0) { current--; loadQuestion(); }
+    }
+
+    function showResult() {
+      document.getElementById("quizPage").classList.add("hidden");
+      document.getElementById("resultPage").classList.remove("hidden");
+      const total = quizData.reduce((sum, q, i) => sum + (userAnswers[i] === q.correct ? q.score : 0), 0);
+      document.getElementById("finalScore").textContent = total;
+      const level = resultLevels.find(l => total >= l.min && total <= l.max) || resultLevels[0];
+      document.getElementById("resultTitle").textContent = level.title;
+      document.getElementById("resultDescription").textContent = level.desc;
+      document.getElementById("resultIcon").setAttribute("data-icon", level.icon);
+      
+      const appPage = document.getElementById('resultPage')
+      appPage.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.95), rgba(255,255,255,0.95)), url('result.jpeg')`;
+    }
+
+    function restartQuiz() {
+      current = 0;
+      userAnswers = [];
+      document.getElementById("resultPage").classList.add("hidden");
+      document.getElementById("welcomePage").classList.remove("hidden");
+      
+      const appPage = document.getElementById('welcomePage')
+      appPage.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.95), rgba(255,255,255,0.95)), url('welcome.jpeg')`;
+    }
+  </script>
+</body>
+</html>
+
